@@ -11,6 +11,7 @@ Sub Run_GARMY_Checks()
     Dim duplicateRowsC As String
     Dim duplicateRowsG As String
     Dim errorRowsH As String
+    Dim errorRowsJ As String
     Dim pfWs As Worksheet
     Dim txtBox As MSForms.TextBox
     
@@ -23,12 +24,14 @@ Sub Run_GARMY_Checks()
     duplicateRowsC = "" ' Initialize string to store rows with duplicate NIINs in Column C
     duplicateRowsG = "" ' Initialize string to store rows with duplicate REFNUMs in Column G
     errorRowsH = "" ' Initialize string to store rows with numbers in Column H
+    errorRowsJ = "" ' Initialize string to store rows with non-numerical characters or blank cells in Column J
     
-    ' Set cell backgrounds to no fill in Columns C and G
+    ' Set cell backgrounds to no fill in Columns C, G, and J
     For i = 2 To ws.Cells(ws.Rows.Count, "C").End(xlUp).Row
-        ' Clear any existing fill colors in Columns C and G
+        ' Clear any existing fill colors in Columns C, G, and J
         ws.Cells(i, "C").Interior.ColorIndex = 0
         ws.Cells(i, "G").Interior.ColorIndex = 0
+        ws.Cells(i, "J").Interior.ColorIndex = 0
     Next i
     
     ' Get the last row with data in Column H (HA.UNITISHA)
@@ -112,6 +115,24 @@ Sub Run_GARMY_Checks()
         msg = msg & "The duplicate REFNUMs in Column G are in Rows: " & duplicateRowsG & Chr(10)
     End If
     
+    ' Check for non-numerical characters or blank cells in Column J
+    For i = 3 To lastRow
+        ' Check if cell contains non-numerical characters or is blank
+        If IsEmpty(ws.Cells(i, "J").Value) Or Not IsNumeric(ws.Cells(i, "J").Value) Then
+            ' Highlight cell with non-numerical characters or blank cell in red
+            ws.Cells(i, "J").Interior.Color = RGB(255, 0, 0)
+            errorRowsJ = errorRowsJ & i & ", " ' Add row number to error message
+        End If
+    Next i
+    
+    ' Add message if non-numerical characters or blank cells are found in Column J, listing row numbers
+    If errorRowsJ <> "" Then
+        ' Remove trailing comma and space from error message
+        errorRowsJ = Left(errorRowsJ, Len(errorRowsJ) - 2)
+        ' Add error message to main message string
+        msg = msg & "Error - There are non-numerical characters or blank cells in Column J in Rows: " & errorRowsJ & Chr(10)
+    End If
+    
     ' Display the error message in a text box on the Process Functions sheet
     If pfWs.OLEObjects.Count > 0 Then
         ' Check if text box already exists
@@ -131,6 +152,8 @@ Sub Run_GARMY_Checks()
             .ForeColor = RGB(0, 0, 0)
             .Font.Name = "Calibri"
             .Font.Size = 11
+            .MultiLine = True
+            .WordWrap = True
         End With
     End If
     
